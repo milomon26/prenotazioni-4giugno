@@ -27,10 +27,6 @@
       padding: 0.5rem 1rem;
       cursor: pointer;
     }
-    .slot.full button {
-      background: #ccc;
-      cursor: not-allowed;
-    }
     #modal {
       animation: fadeIn 0.3s ease-in-out;
       display: none;
@@ -77,14 +73,14 @@
       color: #721c24;
       border: 1px solid #f5c6cb;
     }
-  @keyframes fadeIn {
+    @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
   </style>
 </head>
 <body>
-  <h1>4 Giugno 2025</h1>
+  <h1>Prenotazione appuntamenti - 4 Giugno 2025</h1>
   <div id="slotsContainer"></div>
   <div id="messageBox"></div>
 
@@ -98,27 +94,16 @@
   </div>
 
   <script>
-    const currentVersion = "v1.1";
-    const savedVersion = localStorage.getItem("version");
-    if (savedVersion !== currentVersion) {
-      localStorage.removeItem("bookings");
-      localStorage.setItem("version", currentVersion);
-    }
-
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyKL1VpfMNU3PlNpw0nuYv7clfqKNydzWyQLBibBNpLPlTMGxiXl4qLEWvDjSnXjV8s/exec";
     const startHour = 15;
     const endHour = 19;
     const interval = 12;
-    let bookings = {};
-
-    const savedBookings = localStorage.getItem("bookings");
-    if (savedBookings) {
-      bookings = JSON.parse(savedBookings);
-    }
+    let selectedSlotKey = null;
+    const bookings = {};
 
     const slotsContainer = document.getElementById("slotsContainer");
     const modal = document.getElementById("modal");
     const messageBox = document.getElementById("messageBox");
-    let selectedSlotKey = null;
 
     function showMessage(message, type = 'success') {
       messageBox.textContent = message;
@@ -138,14 +123,16 @@
         const startTime = new Date(current);
         const endTime = new Date(current.getTime() + interval * 60000);
         const key = `${startTime.getHours()}:${String(startTime.getMinutes()).padStart(2, '0')}`;
-
-        const slotDiv = document.createElement("div");
-        slotDiv.className = "slot" + (bookings[key] ? " full" : "");
         const label = `${key} - ${endTime.getHours()}:${String(endTime.getMinutes()).padStart(2, '0')}`;
 
-        let content = `<div><strong>${label}</strong><br>${bookings[key] ? "Prenotato da: " + bookings[key] : "Libero"}</div>`;
-        if (!bookings[key]) {
-          content += `<button onclick="openForm('${key}', '${label}')">Prenota</button>`;
+        const slotDiv = document.createElement("div");
+        slotDiv.className = "slot";
+        let content = `<div><strong>${label}</strong><br>`;
+
+        if (bookings[key]) {
+          content += `Prenotato da: ${bookings[key]}</div>`;
+        } else {
+          content += `Libero</div><button onclick="openForm('${key}', '${label}')">Prenota</button>`;
         }
 
         slotDiv.innerHTML = content;
@@ -168,15 +155,36 @@
         showMessage("Inserisci il tuo nome.", 'error');
         return;
       }
-      bookings[selectedSlotKey] = name;
-      localStorage.setItem("bookings", JSON.stringify(bookings));
-      localStorage.setItem("booking_token_" + selectedSlotKey, "true");
-      modal.style.display = "none";
-      showMessage("Prenotazione confermata.", 'success');
-      generateSlots();
+
+      fetch(scriptURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ora: selectedSlotKey, nome: name })
+      })
+      .then(res => {
+        if (res.ok) {
+          bookings[selectedSlotKey] = name;
+          modal.style.display = "none";
+          showMessage("Prenotazione confermata.", 'success');
+          generateSlots();
+        } else {
+          throw new Error("Errore nel salvataggio");
+        }
+      })
+      .catch(() => showMessage("Errore durante la prenotazione.", 'error'));
     }
 
-    
+    function loadBookings() {
+      fetch(scriptURL)
+        .then(res => res.json())
+        .then(data => {
+          data.forEach(entry => {
+            bookings[entry.ora] = entry.nome;
+          });
+          generateSlots();
+        })
+        .catch(() => showMessage("Errore nel caricamento delle prenotazioni.", 'error'));
+    }
 
     window.onclick = function(event) {
       if (event.target == modal) {
@@ -184,7 +192,7 @@
       }
     }
 
-    generateSlots();
+    loadBookings();
   </script>
 </body>
 </html>

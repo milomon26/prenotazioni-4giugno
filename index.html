@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prenotazioni - 4 Giugno 2025</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f8f8f8;
+    }
+    h1 {
+      text-align: center;
+    }
+    .slot {
+      background: white;
+      border: 1px solid #ccc;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .slot button {
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+    .slot.full button {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    #formContainer {
+      display: none;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Prenotazione appuntamenti - 4 Giugno 2025</h1>
+  <div id="slotsContainer"></div>
+
+  <div id="formContainer">
+    <h3>Prenota lo slot: <span id="selectedSlot"></span></h3>
+    <input type="text" id="nameInput" placeholder="Il tuo nome" required>
+    <button onclick="confirmBooking()">Conferma prenotazione</button>
+  </div>
+
+  <script>
+    const startHour = 15;
+    const endHour = 19;
+    const interval = 9; // minuti
+    const bookings = JSON.parse(localStorage.getItem("bookings") || "{}");
+
+    const slotsContainer = document.getElementById("slotsContainer");
+    let selectedSlotKey = null;
+
+    function generateSlots() {
+      let current = new Date("2025-06-04T" + String(startHour).padStart(2, '0') + ":00:00");
+      const end = new Date("2025-06-04T" + String(endHour).padStart(2, '0') + ":00:00");
+
+      while (current < end) {
+        const startTime = new Date(current);
+        const endTime = new Date(current.getTime() + interval * 60000);
+        const key = `${startTime.getHours()}:${String(startTime.getMinutes()).padStart(2, '0')}`;
+
+        const slotDiv = document.createElement("div");
+        slotDiv.className = "slot" + (bookings[key] ? " full" : "");
+        const label = `${key} - ${endTime.getHours()}:${String(endTime.getMinutes()).padStart(2, '0')}`;
+
+        slotDiv.innerHTML = `
+          <div><strong>${label}</strong><br>${bookings[key] ? "Prenotato da: " + bookings[key] : "Libero"}</div>
+          <button ${bookings[key] ? "disabled" : ""} onclick="openForm('${key}', '${label}')">Prenota</button>
+        `;
+
+        slotsContainer.appendChild(slotDiv);
+        current = endTime;
+      }
+    }
+
+    function openForm(key, label) {
+      selectedSlotKey = key;
+      document.getElementById("selectedSlot").textContent = label;
+      document.getElementById("formContainer").style.display = "block";
+    }
+
+    function confirmBooking() {
+      const name = document.getElementById("nameInput").value.trim();
+      if (!name) {
+        alert("Inserisci il tuo nome.");
+        return;
+      }
+      bookings[selectedSlotKey] = name;
+      localStorage.setItem("bookings", JSON.stringify(bookings));
+      location.reload();
+    }
+
+    generateSlots();
+  </script>
+</body>
+</html>

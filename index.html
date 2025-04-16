@@ -59,10 +59,21 @@
       margin-top: 1rem;
       padding: 0.5rem 1rem;
     }
+    #resetBtn {
+      display: block;
+      margin: 1rem auto;
+      padding: 0.5rem 1rem;
+      background: #d9534f;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h1>Prenotazione appuntamenti - 4 Giugno 2025</h1>
+  <h1>4 Giugno 2025</h1>
+  <button id="resetBtn" onclick="resetBookings()">🔄 Reset prenotazioni</button>
   <div id="slotsContainer"></div>
 
   <div id="modal">
@@ -78,13 +89,19 @@
     const startHour = 15;
     const endHour = 19;
     const interval = 12; // minuti
-    const bookings = JSON.parse(localStorage.getItem("bookings") || "{}");
+    let bookings = {};
+
+    const savedBookings = localStorage.getItem("bookings");
+    if (savedBookings) {
+      bookings = JSON.parse(savedBookings);
+    }
 
     const slotsContainer = document.getElementById("slotsContainer");
     const modal = document.getElementById("modal");
     let selectedSlotKey = null;
 
     function generateSlots() {
+      slotsContainer.innerHTML = "";
       let current = new Date("2025-06-04T" + String(startHour).padStart(2, '0') + ":00:00");
       const end = new Date("2025-06-04T" + String(endHour).padStart(2, '0') + ":00:00");
 
@@ -123,7 +140,15 @@
       bookings[selectedSlotKey] = name;
       localStorage.setItem("bookings", JSON.stringify(bookings));
       modal.style.display = "none";
-      location.reload();
+      generateSlots();
+    }
+
+    function resetBookings() {
+      if (confirm("Sei sicuro di voler cancellare tutte le prenotazioni?")) {
+        localStorage.removeItem("bookings");
+        bookings = {};
+        generateSlots();
+      }
     }
 
     window.onclick = function(event) {

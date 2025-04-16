@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prenotazioni - 4 Giugno 2025</title>
+  <title>4 Giugno 2025</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -59,29 +59,37 @@
       margin-top: 1rem;
       padding: 0.5rem 1rem;
     }
-    #resetBtn {
-      display: block;
-      margin: 1rem auto;
-      padding: 0.5rem 1rem;
-      background: #d9534f;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+    #messageBox {
+      display: none;
+      text-align: center;
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+    }
+    #messageBox.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    #messageBox.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
     }
   </style>
 </head>
 <body>
-  <h1>4 Giugno 2025</h1>
-  <button id="resetBtn" onclick="resetBookings()">🔄 Reset prenotazioni</button>
+  <h1>Prenotazione appuntamenti - 4 Giugno 2025</h1>
   <div id="slotsContainer"></div>
+  <div id="messageBox"></div>
 
   <div id="modal">
     <div id="modalContent">
-      <h3>Prenota lo slot: <span id="selectedSlot"></span></h3>
+      <h3>Prenota o cancella lo slot: <span id="selectedSlot"></span></h3>
       <input type="text" id="nameInput" placeholder="Il tuo nome" required>
       <br>
       <button onclick="confirmBooking()">Conferma prenotazione</button>
+      <button onclick="cancelBooking()">Annulla prenotazione</button>
     </div>
   </div>
 
@@ -98,7 +106,17 @@
 
     const slotsContainer = document.getElementById("slotsContainer");
     const modal = document.getElementById("modal");
+    const messageBox = document.getElementById("messageBox");
     let selectedSlotKey = null;
+
+    function showMessage(message, type = 'success') {
+      messageBox.textContent = message;
+      messageBox.className = type === 'success' ? 'success' : 'error';
+      messageBox.style.display = 'block';
+      setTimeout(() => {
+        messageBox.style.display = 'none';
+      }, 3000);
+    }
 
     function generateSlots() {
       slotsContainer.innerHTML = "";
@@ -116,7 +134,7 @@
 
         slotDiv.innerHTML = `
           <div><strong>${label}</strong><br>${bookings[key] ? "Prenotato da: " + bookings[key] : "Libero"}</div>
-          <button ${bookings[key] ? "disabled" : ""} onclick="openForm('${key}', '${label}')">Prenota</button>
+          <button onclick="openForm('${key}', '${label}')">${bookings[key] ? "Modifica" : "Prenota"}</button>
         `;
 
         slotsContainer.appendChild(slotDiv);
@@ -134,20 +152,30 @@
     function confirmBooking() {
       const name = document.getElementById("nameInput").value.trim();
       if (!name) {
-        alert("Inserisci il tuo nome.");
+        showMessage("Inserisci il tuo nome.", 'error');
         return;
       }
       bookings[selectedSlotKey] = name;
       localStorage.setItem("bookings", JSON.stringify(bookings));
       modal.style.display = "none";
+      showMessage("Prenotazione confermata.", 'success');
       generateSlots();
     }
 
-    function resetBookings() {
-      if (confirm("Sei sicuro di voler cancellare tutte le prenotazioni?")) {
-        localStorage.removeItem("bookings");
-        bookings = {};
+    function cancelBooking() {
+      const name = document.getElementById("nameInput").value.trim();
+      if (!name) {
+        showMessage("Inserisci il tuo nome per cancellare.", 'error');
+        return;
+      }
+      if (bookings[selectedSlotKey] === name) {
+        delete bookings[selectedSlotKey];
+        localStorage.setItem("bookings", JSON.stringify(bookings));
+        modal.style.display = "none";
+        showMessage("Prenotazione annullata.", 'success');
         generateSlots();
+      } else {
+        showMessage("Nome non corrispondente alla prenotazione.", 'error');
       }
     }
 

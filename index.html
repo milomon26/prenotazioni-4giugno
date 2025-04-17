@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -89,20 +88,23 @@
     <div id="modalContent">
       <span onclick="modal.style.display='none'" style="position:absolute; top:10px; right:20px; cursor:pointer; font-size:20px;">&times;</span>
       <h3>Prenota lo slot: <span id="selectedSlot"></span></h3>
-      <input type="text" id="nameInput" placeholder="Il tuo nome" required>
+      <select id="nameInput" required></select>
       <br>
       <button onclick="confirmBooking()">Conferma</button>
-      <div id="messageBox"></div>
+            <div id="messageBox"></div>
     </div>
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyKL1VpfMNU3PlNpw0nuYv7clfqKNydzWyQLBibBNpLPlTMGxiXl4qLEWvDjSnXjV8s/exec";
+    const scriptURL = "https://sheetdb.io/api/v1/rv1eqo763qa7j";
     const startHour = 15;
     const endHour = 19;
-    const interval = 12;
+    // const extraSlot = true; // non serve più
+    const totalSlots = 21;
+    const interval = (endHour - startHour) * 60 / totalSlots;
     let selectedSlotKey = null;
     const bookings = {};
+    const allNames = ["ANNALISA", "CRISTINA", "ELENA", "EZIO", "FLAVIA", "FLORIANA", "FRANCESCO", "GIUSEPPE", "INES", "LAURA", "MARIA LUISA", "MATTEO", "MONIA", "PATRIZIA", "PIETRO", "ROBERTA", "ROBERTO", "ROSALBA", "SANDRA", "SIMONETTA", "VIVIANA"];
 
     const slotsContainer = document.getElementById("slotsContainer");
     const modal = document.getElementById("modal");
@@ -119,14 +121,16 @@
 
     function generateSlots() {
       slotsContainer.innerHTML = "";
-      let current = new Date("2025-06-04T15:00:00");
-      const end = new Date("2025-06-04T19:00:00");
+      let current = new Date("2025-06-04T" + String(startHour).padStart(2, '0') + ":00:00");
+      const end = new Date("2025-06-04T" + String(endHour).padStart(2, '0') + ":00:00");
 
+      let slotCount = 0;
       while (current < end) {
+
         const startTime = new Date(current);
         const endTime = new Date(current.getTime() + interval * 60000);
-        const key = `${startTime.getHours()}:${String(startTime.getMinutes()).padStart(2, '0')}`;
-        const label = `${key} - ${endTime.getHours()}:${String(endTime.getMinutes()).padStart(2, '0')}`;
+        const key = `${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')}`;
+        const label = `${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')} - ${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`;
 
         const slotDiv = document.createElement("div");
         slotDiv.className = "slot";
@@ -141,15 +145,25 @@
         slotDiv.innerHTML = content;
         slotsContainer.appendChild(slotDiv);
         current = endTime;
+        slotCount++;
       }
     }
 
     function openForm(key, label) {
       selectedSlotKey = key;
       document.getElementById("selectedSlot").textContent = label;
-      document.getElementById("nameInput").value = "";
+      const nameSelect = document.getElementById("nameInput");
+      nameSelect.innerHTML = "";
+      const bookedNames = Object.values(bookings);
+      const availableNames = allNames.filter(name => !bookedNames.includes(name));
+      availableNames.forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        nameSelect.appendChild(option);
+      });
       modal.style.display = "flex";
-      document.getElementById("nameInput").focus();
+      nameSelect.focus();
     }
 
     function confirmBooking() {
@@ -162,7 +176,7 @@
       fetch(scriptURL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ora: selectedSlotKey, nome: name })
+        body: JSON.stringify({ data: [{ Ora: selectedSlotKey, Nominativo: name, Timestamp: new Date().toISOString() }] })
       })
       .then(res => {
         if (res.ok) {
@@ -182,8 +196,8 @@
         .then(res => res.json())
         .then(data => {
           data.forEach(entry => {
-            bookings[entry.ora] = entry.nome;
-          });
+            bookings[entry.Ora] = entry.Nominativo;
+            });
           generateSlots();
         })
         .catch(() => showMessage("Errore nel caricamento delle prenotazioni.", 'error'));

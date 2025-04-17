@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>4 Giugno 2025</title>
+  <title>Colloqui 4 Giugno</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -41,6 +40,7 @@
       align-items: center;
     }
     #modalContent {
+      position: relative;
       background: white;
       padding: 2rem;
       border-radius: 10px;
@@ -81,21 +81,22 @@
   </style>
 </head>
 <body>
-  <h1>Prenotazione appuntamenti - 4 Giugno 2025</h1>
+  <h1>Colloqui 4 Giugno</h1>
   <div id="slotsContainer"></div>
-  <div id="messageBox"></div>
 
   <div id="modal">
     <div id="modalContent">
+      <span onclick="modal.style.display='none'" style="position:absolute; top:10px; right:20px; cursor:pointer; font-size:20px;">&times;</span>
       <h3>Prenota lo slot: <span id="selectedSlot"></span></h3>
       <input type="text" id="nameInput" placeholder="Il tuo nome" required>
       <br>
-      <button onclick="confirmBooking()">Conferma prenotazione</button>
+      <button onclick="confirmBooking()">Conferma</button>
+            <div id="messageBox"></div>
     </div>
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/1HbHICc_0tELzJ0xL_v7JSj_GseS_5n2q6vnKDrqAzug/exec";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyKL1VpfMNU3PlNpw0nuYv7clfqKNydzWyQLBibBNpLPlTMGxiXl4qLEWvDjSnXjV8s/exec";
     const startHour = 15;
     const endHour = 19;
     const interval = 12;
@@ -128,12 +129,12 @@
 
         const slotDiv = document.createElement("div");
         slotDiv.className = "slot";
-        let content = `<div><strong>${label}</strong><br>`;
+        let content = `<div><strong>${label}</strong></div>`;
 
         if (bookings[key]) {
-          content += `Prenotato da: ${bookings[key]}</div>`;
+          content += `<div>${bookings[key]}</div>`;
         } else {
-          content += `Libero</div><button onclick="openForm('${key}', '${label}')">Prenota</button>`;
+          content += `<button onclick="openForm('${key}', '${label}')">Prenota</button>`;
         }
 
         slotDiv.innerHTML = content;

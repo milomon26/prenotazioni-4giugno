@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -49,7 +48,7 @@
       max-width: 400px;
       width: 100%;
     }
-    #modalContent input {
+    #modalContent input, #modalContent select {
       padding: 0.5rem;
       margin-top: 1rem;
       width: 100%;
@@ -84,6 +83,10 @@
 <body>
   <h1>Colloqui 4 Giugno</h1>
   <div id="slotsContainer"></div>
+  <div id="counter" style="text-align: center; margin-top: 1rem; font-weight: bold;"></div>
+  <div style="text-align: center; font-size: 0.95rem; margin-top: 0.25rem;">
+    Se vuoi modificare lo slot prenotato, <em>senza fare danni</em>, <a href="https://docs.google.com/spreadsheets/d/1HbHICc_0tELzJ0xL_v7JSj_GseS_5n2q6vnKDrqAzug/edit" target="_blank">clicca qui</a> ed elimina <strong>SOLO</strong> la tua riga.
+  </div>
 
   <div id="modal">
     <div id="modalContent">
@@ -101,14 +104,13 @@
     const startHour = 15;
     const endHour = 19;
     const totalSlots = 21;
-    const interval = (endHour - startHour) * 60 / totalSlots;
-    let selectedSlotKey = null;
     const bookings = {};
-    const allNames = ["ANNALISA", "CRISTINA", "ELENA", "EZIO", "FLAVIA", "FLORIANA", "FRANCESCO", "GIUSEPPE", "INES", "LAURA", "MARIA LUISA", "MATTEO", "MONIA", "PATRIZIA", "PIETRO", "ROBERTA", "ROBERTO", "ROSALBA", "SANDRA", "SIMONETTA", "VIVIANA"];
+    const allNames = ["ANNALISA", "CRISTINA", "ELENA", "EZIO", "FLAVIA", "FLORIANA", "FRANCESCO", "GIUSEPPE", "INES", "LAURA", "LUISA", "MATTEO", "MONIA", "PATRIZIA", "PIETRO", "ROBERTA", "ROBERTO", "ROSALBA", "SANDRA", "SIMONETTA", "VIVIANA"];
 
     const slotsContainer = document.getElementById("slotsContainer");
     const modal = document.getElementById("modal");
     const messageBox = document.getElementById("messageBox");
+    let selectedSlotKey = null;
 
     function showMessage(message, type = 'success') {
       messageBox.textContent = message;
@@ -120,15 +122,21 @@
     }
 
     function generateSlots() {
+      const counterDiv = document.getElementById("counter");
+      let freeSlots = 0;
       slotsContainer.innerHTML = "";
-      let current = new Date("2025-06-04T15:00:00");
-      const end = new Date("2025-06-04T19:00:00");
+      const totalMinutes = (endHour - startHour) * 60;
+      const baseSlotDuration = Math.floor(totalMinutes / totalSlots);
+      const extraMinutes = totalMinutes % totalSlots;
 
-      while (current < end) {
-        const startTime = new Date(current);
-        const endTime = new Date(current.getTime() + interval * 60000);
-        const key = `${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')}`;
-        const label = `${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')} - ${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`;
+      let current = new Date("2025-06-04T15:00:00");
+      for (let i = 0; i < totalSlots; i++) {
+        const slotStart = new Date(current);
+        const duration = baseSlotDuration + (i < extraMinutes ? 1 : 0);
+        const slotEnd = new Date(current.getTime() + duration * 60000);
+
+        const key = `${String(slotStart.getHours()).padStart(2, '0')}:${String(slotStart.getMinutes()).padStart(2, '0')}`;
+        const label = `${String(slotStart.getHours()).padStart(2, '0')}:${String(slotStart.getMinutes()).padStart(2, '0')} - ${String(slotEnd.getHours()).padStart(2, '0')}:${String(slotEnd.getMinutes()).padStart(2, '0')}`;
 
         const slotDiv = document.createElement("div");
         slotDiv.className = "slot";
@@ -138,12 +146,15 @@
           content += `<div>${bookings[key]}</div>`;
         } else {
           content += `<button onclick="openForm('${key}', '${label}')">Prenota</button>`;
+          freeSlots++;
         }
 
         slotDiv.innerHTML = content;
         slotsContainer.appendChild(slotDiv);
-        current = endTime;
+        current = slotEnd;
       }
+      const bookedSlots = totalSlots - freeSlots;
+      counterDiv.textContent = `${bookedSlots}/${totalSlots}`;
     }
 
     function openForm(key, label) {
@@ -178,9 +189,9 @@
       .then(res => {
         if (res.ok) {
           bookings[selectedSlotKey] = name;
-          modal.style.display = "none";
-          showMessage("Prenotazione confermata.", 'success');
+          showMessage("Prenotazione registrata con successo.", 'success');
           generateSlots();
+          modal.style.display = "none";
         } else {
           throw new Error("Errore nel salvataggio");
         }

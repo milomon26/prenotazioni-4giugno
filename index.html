@@ -38,12 +38,12 @@
   </style>
 </head>
 <body>
-  <h1>Colloqui 4 Giugno</h1>
+  <h1>Prenotazione appuntamenti - 4 Giugno 2025</h1>
   <div id="slotsContainer"></div>
-  
+  <div id="messageBox"></div>
 
   <div id="modal">
-    <div id="modalContent"><div id="messageBox"></div>
+    <div id="modalContent">
       <h3>Prenota lo slot: <span id="selectedSlot"></span></h3>
       <input type="text" id="nameInput" placeholder="Il tuo nome" required />
       <br />
@@ -88,7 +88,7 @@
         if (bookings[key]) {
           content += `Prenotato da: ${bookings[key]}</div>`;
         } else {
-          content += `${bookings[key]}</div>`;
+          content += `Libero</div><button onclick="openForm('${key}', '${label}')">Prenota</button>`;
         }
 
         slotDiv.innerHTML = content;

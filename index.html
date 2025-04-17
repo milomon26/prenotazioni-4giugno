@@ -144,9 +144,9 @@
 
         if (bookings[key]) {
           if (bookings._mySlot === key) {
-            content += `<div>\${bookings[key]} <button onclick="deleteBooking('\${key}')">🗑️</button></div>`;
+            content += `<div>${bookings[key]} <button onclick="deleteBooking('${key}')">🗑️</button></div>`;
           } else {
-            content += `<div>\${bookings[key]}</div>`;
+            content += `<div>${bookings[key]}</div>`;
           }
         } else {
           content += `<button onclick="openForm('${key}', '${label}')">Prenota</button>`;

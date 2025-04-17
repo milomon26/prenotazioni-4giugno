@@ -189,7 +189,6 @@
       .then(res => {
         if (res.ok) {
           bookings[selectedSlotKey] = name;
-          showMessage("Prenotazione registrata con successo.", 'success');
           generateSlots();
           modal.style.display = "none";
         } else {

@@ -143,11 +143,7 @@
         let content = `<div><strong>${label}</strong></div>`;
 
         if (bookings[key]) {
-          if (bookings._mySlot === key) {
-            content += `<div>${bookings[key]} <button onclick="deleteBooking('${key}')" style="padding: 2px 6px; font-size: 1rem;">🗑️</button></div>`;
-          } else {
-            content += `<div>${bookings[key]}</div>`;
-          }
+          content += `<div>${bookings[key]}</div>`;
         } else {
           content += `<button onclick="openForm('${key}', '${label}')">Prenota</button>`;
           freeSlots++;
@@ -178,20 +174,6 @@
       nameSelect.focus();
     }
 
-    function deleteBooking(slot) {
-      fetch(scriptURL + `?Ora=${encodeURIComponent(slot)}&Nominativo=${encodeURIComponent(localStorage.getItem('myBookingName'))}`, {
-        method: 'DELETE'
-      })
-      .then(res => {
-        if (res.ok) {
-          localStorage.removeItem('myBookingSlot');
-          localStorage.removeItem('myBookingName');
-          delete bookings[slot];
-          generateSlots();
-        }
-      });
-    }
-
     function confirmBooking() {
       const name = document.getElementById("nameInput").value.trim();
       if (!name) {
@@ -207,8 +189,6 @@
       .then(res => {
         if (res.ok) {
           bookings[selectedSlotKey] = name;
-          localStorage.setItem('myBookingName', name);
-          localStorage.setItem('myBookingSlot', selectedSlotKey);
           generateSlots();
           modal.style.display = "none";
         } else {
@@ -224,9 +204,6 @@
         .then(data => {
           data.forEach(entry => {
             bookings[entry.Ora] = entry.Nominativo;
-            if (localStorage.getItem('myBookingName') === entry.Nominativo && localStorage.getItem('myBookingSlot') === entry.Ora) {
-              bookings._mySlot = entry.Ora;
-            }
           });
           generateSlots();
         })

@@ -190,18 +190,24 @@
   .catch(() => showMessage("Errore salvataggio", "error"));
 }
 
-
+let cache = null;
     function loadBookings() {
-      fetch(scriptURL)
-        .then(r => r.json())
-        .then(data => {
-          data.forEach(e => {
-            if (e.Ora && e.Nominativo) bookings[e.Ora] = e.Nominativo;
-          });
-          generateSlots();
-        })
-        .catch(() => showMessage("Errore caricamento.", "error"));
-    }
+  if (cache) {
+    Object.assign(bookings, cache);
+    generateSlots();
+    return;
+  }
+
+  fetch(scriptURL)
+    .then(r => r.json())
+    .then(data => {
+      data.forEach(e => bookings[e.Ora] = e.Nominativo);
+      cache = {...bookings};
+      generateSlots();
+    })
+    .catch(() => showMessage("Errore caricamento.", "error"));
+}
+
 
     window.onclick = function(event) {
       if (event.target == modal) modal.style.display = "none";

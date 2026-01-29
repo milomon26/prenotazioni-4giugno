@@ -99,124 +99,133 @@
     </div>
   </div>
 
-  <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbwr_KgA14sw5kPZWngnp8AFOhJmOpM1mJ8z2FR-Jl_NTlcS01pA4HVf8xhCCBqjSLX8/exec";
-    const startHour = 15;
-    const endHour = 19;
-    const totalSlots = 21;
-    const bookings = {};
-    const allNames = ["ANNALISA", "CRISTINA", "ELENA", "EZIO", "FLAVIA", "FLORIANA", "FRANCESCO", "GIUSEPPE", "INES", "LAURA", "LUISA", "MATTEO", "MONIA", "PATRIZIA", "PIETRO", "ROBERTA", "ROBERTO", "ROSALBA", "SANDRA", "SIMONETTA", "VIVIANA"];
+ <script>
+const scriptURL = "https://script.google.com/macros/s/AKfycbwr_KgA14sw5kPZWngnp8AFOhJmOpM1mJ8z2FR-Jl_NTlcS01pA4HVf8xhCCBqjSLX8/exec";
 
-    const slotsContainer = document.getElementById("slotsContainer");
-    const modal = document.getElementById("modal");
-    const messageBox = document.getElementById("messageBox");
-    let selectedSlotKey = null;
+// configurazione
+const days = [
+  { label: "Mercoledì 4", date: "2025-06-04T14:30:00", slots: 8 },
+  { label: "Mercoledì 11", date: "2025-06-11T14:30:00", slots: 8 }
+];
 
-    function showMessage(message, type = 'success') {
-      messageBox.textContent = message;
-      messageBox.className = type === 'success' ? 'success' : 'error';
-      messageBox.style.display = 'block';
-      setTimeout(() => {
-        messageBox.style.display = 'none';
-      }, 3000);
-    }
+const endHour = 16; // fine alle 16
+const bookings = {};
+const allNames = ["ANNALISA","CRISTINA","ELENA","EZIO","FLAVIA","FLORIANA","GIUSEPPE","INES","LUISA","MONIA","PIETRO","ROBERTA","ROSALBA","SANDRA","SIMONETTA","VIVIANA"];
 
-    function generateSlots() {
-      const counterDiv = document.getElementById("counter");
-      let freeSlots = 0;
-      slotsContainer.innerHTML = "";
-      const totalMinutes = (endHour - startHour) * 60;
-      const baseSlotDuration = Math.floor(totalMinutes / totalSlots);
-      const extraMinutes = totalMinutes % totalSlots;
+const slotsContainer = document.getElementById("slotsContainer");
+const modal = document.getElementById("modal");
+const messageBox = document.getElementById("messageBox");
+let selectedSlotKey = null;
 
-      let current = new Date("2025-06-04T15:00:00");
-      for (let i = 0; i < totalSlots; i++) {
-        const slotStart = new Date(current);
-        const duration = baseSlotDuration + (i < extraMinutes ? 1 : 0);
-        const slotEnd = new Date(current.getTime() + duration * 60000);
+function showMessage(message, type = 'success') {
+  messageBox.textContent = message;
+  messageBox.className = type === 'success' ? 'success' : 'error';
+  messageBox.style.display = 'block';
+  setTimeout(() => messageBox.style.display = 'none', 3000);
+}
 
-        const key = `${String(slotStart.getHours()).padStart(2, '0')}:${String(slotStart.getMinutes()).padStart(2, '0')}`;
-        const label = `${String(slotStart.getHours()).padStart(2, '0')}:${String(slotStart.getMinutes()).padStart(2, '0')} - ${String(slotEnd.getHours()).padStart(2, '0')}:${String(slotEnd.getMinutes()).padStart(2, '0')}`;
+function generateSlots() {
+  const counterDiv = document.getElementById("counter");
+  let freeSlots = 0;
+  let totalSlots = 0;
+  slotsContainer.innerHTML = "";
 
-        const slotDiv = document.createElement("div");
-        slotDiv.className = "slot";
-        let content = `<div><strong>${label}</strong></div>`;
+  days.forEach(day => {
+    const start = new Date(day.date);
+    const end = new Date(start);
+    end.setHours(endHour, 0, 0, 0);
 
-        if (bookings[key]) {
-          content += `<div>${bookings[key]}</div>`;
-        } else {
-          content += `<button onclick="openForm('${key}', '${label}')">Prenota</button>`;
-          freeSlots++;
-        }
+    const totalMinutes = (end - start) / 60000;
+    const baseSlot = Math.floor(totalMinutes / day.slots);
+    const extra = totalMinutes % day.slots;
 
-        slotDiv.innerHTML = content;
-        slotsContainer.appendChild(slotDiv);
-        current = slotEnd;
-      }
-      const bookedSlots = totalSlots - freeSlots;
-      counterDiv.textContent = `${bookedSlots}/${totalSlots}`;
-    }
+    let current = new Date(start);
 
-    function openForm(key, label) {
-      selectedSlotKey = key;
-      document.getElementById("selectedSlot").textContent = label;
-      const nameSelect = document.getElementById("nameInput");
-      nameSelect.innerHTML = "";
-      const bookedNames = Object.values(bookings);
-      const availableNames = allNames.filter(name => !bookedNames.includes(name));
-      availableNames.forEach(name => {
-        const option = document.createElement("option");
-        option.value = name;
-        option.textContent = name;
-        nameSelect.appendChild(option);
-      });
-      modal.style.display = "flex";
-      nameSelect.focus();
-    }
+    const title = document.createElement("h3");
+    title.textContent = `${day.label} (14:30 - 16:00)`;
+    title.style.marginTop = "2rem";
+    slotsContainer.appendChild(title);
 
-    function confirmBooking() {
-      const name = document.getElementById("nameInput").value.trim();
-      if (!name) {
-        showMessage("Inserisci il tuo nome.", 'error');
-        return;
+    for (let i = 0; i < day.slots; i++) {
+      totalSlots++;
+      const duration = baseSlot + (i < extra ? 1 : 0);
+      const slotStart = new Date(current);
+      const slotEnd = new Date(current.getTime() + duration * 60000);
+
+      const key = `${day.label} ${slotStart.getHours().toString().padStart(2,'0')}:${slotStart.getMinutes().toString().padStart(2,'0')}`;
+      const label = `${day.label} - ${slotStart.getHours().toString().padStart(2,'0')}:${slotStart.getMinutes().toString().padStart(2,'0')} → ${slotEnd.getHours().toString().padStart(2,'0')}:${slotEnd.getMinutes().toString().padStart(2,'0')}`;
+
+      const slotDiv = document.createElement("div");
+      slotDiv.className = "slot";
+      let content = `<div><strong>${label}</strong></div>`;
+
+      if (bookings[key]) {
+        content += `<div>${bookings[key]}</div>`;
+      } else {
+        content += `<button onclick="openForm('${key}', '${label}')">Prenota</button>`;
+        freeSlots++;
       }
 
-      fetch(scriptURL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: [{ Ora: selectedSlotKey, Nominativo: name, Timestamp: new Date().toISOString() }] })
-      })
-      .then(res => {
-        if (res.ok) {
-          bookings[selectedSlotKey] = name;
-          generateSlots();
-          modal.style.display = "none";
-        } else {
-          throw new Error("Errore nel salvataggio");
-        }
-      })
-      .catch(() => showMessage("Errore durante la prenotazione.", 'error'));
+      slotDiv.innerHTML = content;
+      slotsContainer.appendChild(slotDiv);
+      current = slotEnd;
     }
+  });
 
-    function loadBookings() {
-      fetch(scriptURL)
-        .then(res => res.json())
-        .then(data => {
-          data.forEach(entry => {
-            bookings[entry.Ora] = entry.Nominativo;
-          });
-          generateSlots();
-        })
-        .catch(() => showMessage("Errore nel caricamento delle prenotazioni.", 'error'));
-    }
+  counterDiv.textContent = `${totalSlots - freeSlots}/${totalSlots}`;
+}
 
-    window.onclick = function(event) {
-      if (event.target == modal) {
-        modal.style.display = "none";
-      }
-    }
+function openForm(key, label) {
+  selectedSlotKey = key;
+  document.getElementById("selectedSlot").textContent = label;
+  const nameSelect = document.getElementById("nameInput");
+  nameSelect.innerHTML = "";
+  const bookedNames = Object.values(bookings);
+  const availableNames = allNames.filter(n => !bookedNames.includes(n));
 
-    loadBookings();
-  </script>
+  availableNames.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    nameSelect.appendChild(option);
+  });
+
+  modal.style.display = "flex";
+}
+
+function confirmBooking() {
+  const name = document.getElementById("nameInput").value.trim();
+  if (!name) return showMessage("Inserisci il tuo nome", "error");
+
+  fetch(scriptURL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data: [{ Ora: selectedSlotKey, Nominativo: name, Timestamp: new Date().toISOString() }] })
+  })
+  .then(r => {
+    if (r.ok) {
+      bookings[selectedSlotKey] = name;
+      generateSlots();
+      modal.style.display = "none";
+    } else throw new Error();
+  })
+  .catch(() => showMessage("Errore salvataggio", "error"));
+}
+
+function loadBookings() {
+  fetch(scriptURL)
+    .then(r => r.json())
+    .then(data => {
+      data.forEach(e => bookings[e.Ora] = e.Nominativo);
+      generateSlots();
+    })
+    .catch(() => showMessage("Errore caricamento", "error"));
+}
+
+window.onclick = e => { if (e.target == modal) modal.style.display = "none"; }
+
+loadBookings();
+</script>
+
 </body>
 </html>

@@ -164,33 +164,32 @@
       modal.style.display = "flex";
     }
 
-   function confirmBooking() {
-  const name = document.getElementById("nameInput").value.trim();
-  if (!name) return showMessage("Seleziona il tuo nome.", "error");
 
-  fetch(scriptURL, {
+    function confirmBooking() {
+  const name = document.getElementById("nameInput").value;
+  if (!name) return showMessage("Seleziona un nome", "error");
+
+  const formURL = "https://docs.google.com/forms/d/e/1FAIpQLScB0jxJYgDaNR-454T-cbb7DZOa-Tve8U2j-45GRMTK5fUu_A/formResponse";
+
+  const data = new FormData();
+  data.append("entry.1009667509", selectedSlotKey); // Ora
+  data.append("entry.104265613", name);             // Nominativo
+  data.append("entry.544993306", new Date().toISOString()); // Timestamp
+
+  fetch(formURL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      data: [{
-        Ora: selectedSlotKey,
-        Nominativo: name,
-        Timestamp: new Date().toISOString()
-      }]
-    })
+    mode: "no-cors",
+    body: data
   })
-  .then(r => r.text())
-  .then(t => {
-    if (t.trim() === "OK") {
-      bookings[selectedSlotKey] = name;
-      generateSlots();
-      modal.style.display = "none";
-    } else {
-      showMessage("Errore: " + t, "error");
-    }
+  .then(() => {
+    bookings[selectedSlotKey] = name;
+    generateSlots();
+    modal.style.display = "none";
+    showMessage("Prenotazione salvata!", "success");
   })
-  .catch(() => showMessage("Errore rete/CORS", "error"));
+  .catch(() => showMessage("Errore salvataggio", "error"));
 }
+
 
     function loadBookings() {
       fetch(scriptURL)

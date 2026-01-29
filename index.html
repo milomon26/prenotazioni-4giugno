@@ -23,23 +23,24 @@ h1{text-align:center}
 <body>
 
 <h1>Restituzioni di metà anno</h1>
-<div id="slotsContainer"></div>
-<div id="counter" style="text-align:center;font-weight:bold"></div>
-
-<div style="text-align:center;font-size:.9rem">
-<a href="https://docs.google.com/spreadsheets/d/1HbHICc_0tELzJ0xL_v7JSj_GseS_5n2q6vnKDrqAzug/edit" target="_blank">
-Modifica prenotazione
-</a>
-</div>
-
-<div id="modal">
-  <div id="modalContent">
-    <h3 id="selectedSlot"></h3>
-    <select id="nameInput"></select>
-    <button onclick="confirmBooking()">Conferma</button>
-    <div id="messageBox"></div>
+  <div id="slotsContainer"></div>
+  <div id="counter" style="text-align: center; margin-top: 1rem; font-weight: bold;"></div>
+  <div style="text-align: center; font-size: 0.95rem; margin-top: 0.25rem;">
+    Se vuoi modificare lo slot prenotato, <em>senza fare danni</em>, <a href="https://docs.google.com/spreadsheets/d/1HbHICc_0tELzJ0xL_v7JSj_GseS_5n2q6vnKDrqAzug/edit" target="_blank">clicca qui</a> ed elimina <strong>SOLO</strong> la tua riga. Chiudi il file, ricarica la pagina e prenota un altro slot.
   </div>
-</div>
+
+  <div id="modal">
+    <div id="modalContent">
+      <span onclick="modal.style.display='none'" style="position:absolute; top:10px; right:20px; cursor:pointer; font-size:20px;">&times;</span>
+      <h3>Prenota lo slot: <span id="selectedSlot"></span></h3>
+      <select id="nameInput" required></select>
+      <br>
+      <button onclick="confirmBooking()">Conferma</button>
+      <div id="messageBox"></div>
+    </div>
+  </div>
+
+
 
 <script>
 const readURL="https://docs.google.com/spreadsheets/d/1HbHICc_0tELzJ0xL_v7JSj_GseS_5n2q6vnKDrqAzug/export?format=csv&gid=242056328";

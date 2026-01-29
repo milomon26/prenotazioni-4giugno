@@ -164,37 +164,33 @@
       modal.style.display = "flex";
     }
 
-    function confirmBooking() {
-      const name = document.getElementById("nameInput").value.trim();
-      if (!name) {
-        showMessage("Seleziona il tuo nome.", "error");
-        return;
-      }
-      if (!selectedSlotKey) {
-        showMessage("Slot non valido.", "error");
-        return;
-      }
+   function confirmBooking() {
+  const name = document.getElementById("nameInput").value.trim();
+  if (!name) return showMessage("Seleziona il tuo nome.", "error");
 
-      const params = new URLSearchParams();
-      params.append("Ora", selectedSlotKey);
-      params.append("Nominativo", name);
-      params.append("Timestamp", new Date().toISOString());
-
-      fetch(scriptURL, { method: "POST", body: params })
-        .then(res => res.text())
-        .then(txt => {
-          if (txt.trim() === "OK") {
-            bookings[selectedSlotKey] = name;
-            generateSlots();
-            modal.style.display = "none";
-            showMessage("Prenotazione salvata ✅", "success");
-          } else {
-            // così capiamo cosa risponde davvero lo script
-            showMessage("Errore salvataggio: " + txt, "error");
-          }
-        })
-        .catch(err => showMessage("Errore salvataggio (rete/CORS).", "error"));
+  fetch(scriptURL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      data: [{
+        Ora: selectedSlotKey,
+        Nominativo: name,
+        Timestamp: new Date().toISOString()
+      }]
+    })
+  })
+  .then(r => r.text())
+  .then(t => {
+    if (t.trim() === "OK") {
+      bookings[selectedSlotKey] = name;
+      generateSlots();
+      modal.style.display = "none";
+    } else {
+      showMessage("Errore: " + t, "error");
     }
+  })
+  .catch(() => showMessage("Errore rete/CORS", "error"));
+}
 
     function loadBookings() {
       fetch(scriptURL)

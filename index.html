@@ -1,227 +1,127 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Restituzioni di metà anno</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; background: #f8f8f8; }
-    h1 { text-align: center; }
-    .slot {
-      background: white; border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem;
-      border-radius: 8px; display: flex; justify-content: space-between; align-items: center;
-    }
-    .slot button { padding: 0.5rem 1rem; cursor: pointer; }
-    #modal {
-      animation: fadeIn 0.3s ease-in-out; display: none; position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5);
-      justify-content: center; align-items: center;
-    }
-    #modalContent {
-      position: relative; background: white; padding: 2rem; border-radius: 10px;
-      text-align: center; max-width: 400px; width: 100%;
-    }
-    #modalContent input, #modalContent select { padding: 0.5rem; margin-top: 1rem; width: 100%; }
-    #modalContent button { margin-top: 1rem; padding: 0.5rem 1rem; }
-    #messageBox { display: none; text-align: center; margin-top: 1rem; padding: 0.75rem; border-radius: 8px; }
-    #messageBox.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    #messageBox.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restituzioni di metà anno</title>
+
+<style>
+body{font-family:Arial,sans-serif;padding:2rem;background:#f8f8f8}
+h1{text-align:center}
+.slot{background:#fff;border:1px solid #ccc;padding:1rem;margin-bottom:1rem;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
+.slot button{padding:.5rem 1rem;cursor:pointer}
+#modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);justify-content:center;align-items:center}
+#modalContent{background:#fff;padding:2rem;border-radius:10px;max-width:400px;width:100%;text-align:center}
+#modalContent select{width:100%;padding:.5rem;margin-top:1rem}
+#modalContent button{margin-top:1rem;padding:.5rem 1rem}
+#messageBox{display:none;margin-top:1rem;padding:.75rem;border-radius:8px}
+.success{background:#d4edda;color:#155724}
+.error{background:#f8d7da;color:#721c24}
+</style>
 </head>
+
 <body>
 
-  <h1>Restituzioni di metà anno</h1>
+<h1>Restituzioni di metà anno</h1>
+<div id="slotsContainer"></div>
+<div id="counter" style="text-align:center;font-weight:bold"></div>
 
-  <div id="slotsContainer"></div>
+<div style="text-align:center;font-size:.9rem">
+<a href="https://docs.google.com/spreadsheets/d/1HbHICc_0tELzJ0xL_v7JSj_GseS_5n2q6vnKDrqAzug/edit" target="_blank">
+Modifica prenotazione
+</a>
+</div>
 
-  <div id="counter" style="text-align: center; margin-top: 1rem; font-weight: bold;"></div>
-
-  <div style="text-align: center; font-size: 0.95rem; margin-top: 0.25rem;">
-    Se vuoi modificare lo slot prenotato, <em>senza fare danni</em>,
-    <a href="https://docs.google.com/spreadsheets/d/1HbHICc_0tELzJ0xL_v7JSj_GseS_5n2q6vnKDrqAzug/edit" target="_blank">clicca qui</a>
-    ed elimina <strong>SOLO</strong> la tua riga. Chiudi il file, ricarica la pagina e prenota un altro slot.
+<div id="modal">
+  <div id="modalContent">
+    <h3 id="selectedSlot"></h3>
+    <select id="nameInput"></select>
+    <button onclick="confirmBooking()">Conferma</button>
+    <div id="messageBox"></div>
   </div>
+</div>
 
-  <div id="modal">
-    <div id="modalContent">
-      <span onclick="modal.style.display='none'" style="position:absolute; top:10px; right:20px; cursor:pointer; font-size:20px;">&times;</span>
-      <h3>Prenota lo slot: <span id="selectedSlot"></span></h3>
-      <select id="nameInput" required></select>
-      <br>
-      <button onclick="confirmBooking()">Conferma</button>
-      <div id="messageBox"></div>
-    </div>
-  </div>
+<script>
+const readURL="https://docs.google.com/spreadsheets/d/1HbHICc_0tELzJ0xL_v7JSj_GseS_5n2q6vnKDrqAzug/export?format=csv&gid=242056328";
+const formURL="https://docs.google.com/forms/d/e/1FAIpQLScB0jxJYgDaNR-454T-cbb7DZOa-Tve8U2j-45GRMTK5fUu_A/formResponse";
 
-  <script>
-    const readURL = "https://docs.google.com/spreadsheets/d/1HbHICc_0tELzJ0xL_v7JSj_GseS_5n2q6vnKDrqAzug/export?format=csv&gid=242056328";
+const days=[
+{label:"Mercoledì 4",date:"2025-06-04T14:30:00",slots:8},
+{label:"Mercoledì 11",date:"2025-06-11T14:30:00",slots:8}
+];
 
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyykzGYOGlsnbH1DuzwkjO0FoA4WuUZA5urTiWP7ZPP7OP7V1GGj5d4KYGfBFUPmBd0/exec";
+let bookings={};
 
-    // 8 slot il 4 + 8 slot l'11, 14:30 - 16:00
-    const days = [
-      { label: "Mercoledì 4", date: "2025-06-04T14:30:00", slots: 8 },
-      { label: "Mercoledì 11", date: "2025-06-11T14:30:00", slots: 8 }
-    ];
+const allNames=["ANNALISA","CRISTINA","ELENA","EZIO","FLAVIA","FLORIANA","GIUSEPPE","INES","LUISA","MONIA","PIETRO","ROBERTA","ROSALBA","SANDRA","SIMONETTA","VIVIANA"];
 
-    const endHour = 16;
-    const bookings = {};
+const slotsContainer=document.getElementById("slotsContainer");
+const modal=document.getElementById("modal");
+const messageBox=document.getElementById("messageBox");
+let selectedSlotKey=null;
 
-    const allNames = ["ANNALISA","CRISTINA","ELENA","EZIO","FLAVIA","FLORIANA","GIUSEPPE","INES","LUISA","MONIA","PIETRO","ROBERTA","ROSALBA","SANDRA","SIMONETTA","VIVIANA"];
+function showMessage(m,t){messageBox.textContent=m;messageBox.className=t;messageBox.style.display="block";setTimeout(()=>messageBox.style.display="none",3000)}
 
-    const slotsContainer = document.getElementById("slotsContainer");
-    const modal = document.getElementById("modal");
-    const messageBox = document.getElementById("messageBox");
-    let selectedSlotKey = null;
+function generateSlots(){
+let free=0,total=0;slotsContainer.innerHTML="";
+days.forEach(day=>{
+let start=new Date(day.date),end=new Date(start);end.setHours(16,0,0,0);
+let mins=(end-start)/60000,base=Math.floor(mins/day.slots),extra=mins%day.slots;
+let cur=new Date(start);
+let h=document.createElement("h3");h.textContent=`${day.label} (14:30 - 16:00)`;slotsContainer.appendChild(h);
 
-    function showMessage(message, type = 'success') {
-      messageBox.textContent = message;
-      messageBox.className = type === 'success' ? 'success' : 'error';
-      messageBox.style.display = 'block';
-      setTimeout(() => { messageBox.style.display = 'none'; }, 4000);
-    }
-
-    function generateSlots() {
-      const counterDiv = document.getElementById("counter");
-      let freeSlots = 0;
-      let totalSlots = 0;
-      slotsContainer.innerHTML = "";
-
-      days.forEach(day => {
-        const start = new Date(day.date);
-        const end = new Date(start);
-        end.setHours(endHour, 0, 0, 0);
-
-        const totalMinutes = (end - start) / 60000;
-        const baseSlot = Math.floor(totalMinutes / day.slots);
-        const extra = totalMinutes % day.slots;
-
-        let current = new Date(start);
-
-        const title = document.createElement("h3");
-        title.textContent = `${day.label} (14:30 - 16:00)`;
-        title.style.marginTop = "2rem";
-        slotsContainer.appendChild(title);
-
-        for (let i = 0; i < day.slots; i++) {
-          totalSlots++;
-          const duration = baseSlot + (i < extra ? 1 : 0);
-          const slotStart = new Date(current);
-          const slotEnd = new Date(current.getTime() + duration * 60000);
-
-          const hh1 = slotStart.getHours().toString().padStart(2,'0');
-          const mm1 = slotStart.getMinutes().toString().padStart(2,'0');
-          const hh2 = slotEnd.getHours().toString().padStart(2,'0');
-          const mm2 = slotEnd.getMinutes().toString().padStart(2,'0');
-
-          const key = `${day.label} ${hh1}:${mm1}`;
-          const label = `${day.label} - ${hh1}:${mm1} → ${hh2}:${mm2}`;
-
-          const slotDiv = document.createElement("div");
-          slotDiv.className = "slot";
-          let content = `<div><strong>${label}</strong></div>`;
-
-          if (bookings[key]) {
-            content += `<div>${bookings[key]}</div>`;
-          } else {
-            content += `<button onclick="openForm('${key}', '${label}')">Prenota</button>`;
-            freeSlots++;
-          }
-
-          slotDiv.innerHTML = content;
-          slotsContainer.appendChild(slotDiv);
-          current = slotEnd;
-        }
-      });
-
-      counterDiv.textContent = `${totalSlots - freeSlots}/${totalSlots}`;
-    }
-
-    function openForm(key, label) {
-      selectedSlotKey = key;
-      document.getElementById("selectedSlot").textContent = label;
-
-      const nameSelect = document.getElementById("nameInput");
-      nameSelect.innerHTML = "";
-
-      const bookedNames = Object.values(bookings);
-      const availableNames = allNames.filter(n => !bookedNames.includes(n));
-
-      // se per qualche motivo fossero tutti occupati, almeno non resta vuoto
-      if (availableNames.length === 0) {
-        const opt = document.createElement("option");
-        opt.value = "";
-        opt.textContent = "Nessun nome disponibile";
-        nameSelect.appendChild(opt);
-      } else {
-        availableNames.forEach(name => {
-          const option = document.createElement("option");
-          option.value = name;
-          option.textContent = name;
-          nameSelect.appendChild(option);
-        });
-      }
-
-      modal.style.display = "flex";
-    }
-
-
-    function confirmBooking() {
-  const name = document.getElementById("nameInput").value;
-  if (!name) return showMessage("Seleziona un nome", "error");
-
-  const formURL = "https://docs.google.com/forms/d/e/1FAIpQLScB0jxJYgDaNR-454T-cbb7DZOa-Tve8U2j-45GRMTK5fUu_A/formResponse";
-
-  const data = new FormData();
-  data.append("entry.1009667509", selectedSlotKey); // Ora
-  data.append("entry.104265613", name);             // Nominativo
-  data.append("entry.544993306", new Date().toISOString()); // Timestamp
-
-  fetch(formURL, {
-    method: "POST",
-    mode: "no-cors",
-    body: data
-  })
-  .then(() => {
-    bookings[selectedSlotKey] = name;
-    generateSlots();
-    modal.style.display = "none";
-    showMessage("Prenotazione salvata!", "success");
-  })
-  .catch(() => showMessage("Errore salvataggio", "error"));
+for(let i=0;i<day.slots;i++){
+total++;
+let dur=base+(i<extra?1:0);
+let s=new Date(cur),e=new Date(cur.getTime()+dur*60000);
+let key=`${day.label} ${s.getHours().toString().padStart(2,"0")}:${s.getMinutes().toString().padStart(2,"0")}`;
+let label=`${key} → ${e.getHours().toString().padStart(2,"0")}:${e.getMinutes().toString().padStart(2,"0")}`;
+let d=document.createElement("div");d.className="slot";
+if(bookings[key])d.innerHTML=`<div>${label}</div><div>${bookings[key]}</div>`;
+else{d.innerHTML=`<div>${label}</div><button onclick="openForm('${key}','${label}')">Prenota</button>`;free++}
+slotsContainer.appendChild(d);cur=e;}
+});
+document.getElementById("counter").textContent=`${total-free}/${total}`;
 }
 
-let cache = null;
-   function loadBookings() {
-  fetch(readURL)
-    .then(r => r.text())
-    .then(csv => {
-      const lines = csv.trim().split("\n");
-      bookings = {}; // reset
-
-      lines.forEach(line => {
-        const parts = line.split(",");
-        if (parts.length >= 2) {
-          const ora = parts[0].replace(/"/g, "").trim();
-          const nominativo = parts[1].replace(/"/g, "").trim();
-          if (ora && nominativo) bookings[ora] = nominativo;
-        }
-      });
-
-      generateSlots();
-    })
-    .catch(() => showMessage("Errore caricamento.", "error"));
+function openForm(k,l){
+selectedSlotKey=k;
+document.getElementById("selectedSlot").textContent=l;
+let s=document.getElementById("nameInput");s.innerHTML="";
+Object.values(bookings).forEach(()=>{});
+allNames.filter(n=>!Object.values(bookings).includes(n)).forEach(n=>{
+let o=document.createElement("option");o.value=n;o.textContent=n;s.appendChild(o);
+});
+modal.style.display="flex";
 }
 
+function confirmBooking(){
+let name=document.getElementById("nameInput").value;
+if(!name)return showMessage("Seleziona un nome","error");
+let fd=new FormData();
+fd.append("entry.1009667509",selectedSlotKey);
+fd.append("entry.104265613",name);
+fd.append("entry.544993306",new Date().toISOString());
 
+fetch(formURL,{method:"POST",mode:"no-cors",body:fd}).then(()=>{
+bookings[selectedSlotKey]=name;
+generateSlots();modal.style.display="none";showMessage("Prenotazione salvata","success");
+});
+}
 
-    window.onclick = function(event) {
-      if (event.target == modal) modal.style.display = "none";
-    }
+function loadBookings(){
+fetch(readURL).then(r=>r.text()).then(t=>{
+let lines=t.trim().split("\n");bookings={};
+lines.slice(1).forEach(l=>{
+let p=l.split(",");if(p.length>=2){let k=p[0].replace(/"/g,"").trim(),v=p[1].replace(/"/g,"").trim();
+if(k&&v)bookings[k]=v;}
+});
+generateSlots();
+});
+}
 
-    loadBookings();
-  </script>
+window.onclick=e=>{if(e.target==modal)modal.style.display="none"};
+loadBookings();
+</script>
 
 </body>
 </html>

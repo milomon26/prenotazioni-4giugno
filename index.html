@@ -195,22 +195,27 @@ function openForm(key, label) {
 }
 
 function confirmBooking() {
-  const name = document.getElementById("nameInput").value.trim();
-  if (!name) return showMessage("Inserisci il tuo nome", "error");
+ const params = new URLSearchParams();
+params.append("Ora", selectedSlotKey);
+params.append("Nominativo", name);
+params.append("Timestamp", new Date().toISOString());
 
-  fetch(scriptURL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ data: [{ Ora: selectedSlotKey, Nominativo: name, Timestamp: new Date().toISOString() }] })
-  })
-  .then(r => {
-    if (r.ok) {
-      bookings[selectedSlotKey] = name;
-      generateSlots();
-      modal.style.display = "none";
-    } else throw new Error();
-  })
-  .catch(() => showMessage("Errore salvataggio", "error"));
+fetch(scriptURL, {
+  method: "POST",
+  body: params
+})
+.then(res => res.text())
+.then(txt => {
+  if (txt.trim() === "OK") {
+    bookings[selectedSlotKey] = name;
+    generateSlots();
+    modal.style.display = "none";
+  } else {
+    throw new Error(txt);
+  }
+})
+.catch(() => showMessage("Errore salvataggio", "error"));
+
 }
 
 function loadBookings() {
